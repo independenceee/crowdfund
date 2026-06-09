@@ -683,7 +683,6 @@ test reclaim_fail_not_a_contributor() {
 
   let beneficiary_address: Address = mock_pub_key_address(1, None)
   let donor_address: Address = mock_pub_key_address(2, None)
-  let attacker_address: Address = mock_pub_key_address(3, None)
   let script_address: Address = mock_script_address(1, None)
 
   let goal: Int = 1_000_000_000
@@ -1271,7 +1270,7 @@ test withdraw_fail_invalid_beneficiary_address() {
   !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
 }
 
-//! sad path: an attacker provides a manipulated inline datum stating the goal is reached to trick the validator during consumption.
+// sad path: an attacker provides a manipulated inline datum stating the goal is reached to trick the validator during consumption.
 test withdraw_fail_fake_datum_injection() {
   let redeemer: Redeemer = Withdraw
   let output_reference: OutputReference = mock_utxo_ref(0, 0)
@@ -1283,20 +1282,11 @@ test withdraw_fail_fake_datum_injection() {
   let goal: Int = 1_000_000_000
   let deadline: Int = 100_000
 
-  // The actual UTXO datum (fails goal)
   let actual_datum = Datum {
     beneficiary: beneficiary_address,
     goal: goal,
     deadline: deadline,
     contributions: [Pair(donor_address, 500_000_000)],
-  }
-
-  // The manipulated datum injected by the attacker
-  let fake_datum = Datum {
-    beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: [Pair(donor_address, 1_000_000_000)],
   }
 
   let tx: Transaction = mocktail_tx()
@@ -1317,10 +1307,10 @@ test withdraw_fail_fake_datum_injection() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(fake_datum), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(Some(actual_datum), redeemer, output_reference, valid_tx)
 }
 
-//! sad path: the beneficiary attempts to partially withdraw funds, leaving a remainder at the script instead of consuming it cleanly.
+// sad path: the beneficiary attempts to partially withdraw funds, leaving a remainder at the script instead of consuming it cleanly.
 test withdraw_fail_partial_withdraw() {
   let redeemer: Redeemer = Withdraw
   let output_reference: OutputReference = mock_utxo_ref(0, 0)

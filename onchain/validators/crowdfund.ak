@@ -185,15 +185,37 @@ validator crowdfund {
         }
       }
       Withdraw -> {
+        let lovelace_input = lovelace_of(input.output.value)
+        
         let total_contributions = pairs.foldl(
           datum_input.contributions,
           0,
           fn(_key, value, acc) { acc + value },
         )
+
+        let total_beneficiary_outputs = list.foldl(
+          outputs,
+          0,
+          fn(output, acc) {
+            if output.address == datum_input.beneficiary {
+              acc + lovelace_of(output.value)
+            } else {
+              acc
+            }
+          },
+        )
+
+        let no_continuing_output = !list.any(
+          outputs,
+          fn(output) { output.address == script_address },
+        )
+
         when address_pub_key(datum_input.beneficiary) is {
           Some(beneficiary_pkh) -> and {
               total_contributions >= datum_input.goal,
               verify_signature(extra_signatories, beneficiary_pkh),
+              total_beneficiary_outputs >= lovelace_input,
+              no_continuing_output,
             }
           None -> False
         }
