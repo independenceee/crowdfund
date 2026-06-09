@@ -1,11 +1,11 @@
 use aiken/collection/list
 use aiken/collection/pairs
 use aiken/interval.{Finite}
+use cardano/address.{VerificationKey}
 use cardano/assets.{lovelace_of}
 use cardano/transaction.{
   InlineDatum, Output, OutputReference, Transaction, find_input,
 }
-use cardano/address.{VerificationKey}
 use cardano/tx.{verify_signature}
 use cocktail/vodka_address.{address_pub_key}
 use types.{Datum, Donate, Reclaim, Redeemer, Withdraw}
@@ -25,6 +25,7 @@ validator crowdfund {
 
     when redeemer is {
       Donate -> {
+        expect Finite(upper_bound) = validity_range.upper_bound.bound_type
         let lovelace_input = lovelace_of(input.output.value)
 
         let output = output_by_addr(outputs, script_address)
@@ -59,6 +60,7 @@ validator crowdfund {
           },
         )
         and {
+          upper_bound <= datum_input.deadline,
           datum_input.beneficiary == datum_output.beneficiary,
           total_output - total_input == delta_lovelace,
           datum_input.deadline == datum_output.deadline,
@@ -71,7 +73,6 @@ validator crowdfund {
         expect Finite(lower_bound) = validity_range.lower_bound.bound_type
         let lovelace_input = lovelace_of(input.output.value)
 
-    
         let contributions_as_pkh = list.filter_map(
           datum_input.contributions,
           fn(pair) {
@@ -88,7 +89,6 @@ validator crowdfund {
           },
         )
 
-        
         let total_reclaim = list.foldl(
           reclaimers,
           0,
@@ -118,7 +118,6 @@ validator crowdfund {
           expect InlineDatum(datum_output_raw) = output.datum
           expect datum_output: Datum = datum_output_raw
 
-          // Chuyển đổi datum_output mới sang PKH để đối chiếu
           let output_contributions_as_pkh = list.filter_map(
             datum_output.contributions,
             fn(pair) {
@@ -131,7 +130,6 @@ validator crowdfund {
 
           let length_ok = list.length(datum_output.contributions) == remaining_contributions_count
 
-          // SỬA TẠI ĐÂY: Dùng list.any thay cho pairs.has_key
           let no_reclaimers_left = list.all(
             reclaimers,
             fn(reclaimer_pkh) {
@@ -156,7 +154,6 @@ validator crowdfund {
             output.value,
           ) == remaining_lovelace
         }
-
 
         let reclaimers_paid = list.all(
           reclaimers,
