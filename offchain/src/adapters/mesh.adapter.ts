@@ -222,7 +222,6 @@ export class MeshAdapter {
         try {
             const datum = deserializeDatum(plutusData);
 
-
             const buildAddress = (paymentHex: string, stakeHex?: string): string => {
                 if (!paymentHex || paymentHex.length !== 56) {
                     throw new Error(`Invalid payment credential: ${paymentHex}`);
