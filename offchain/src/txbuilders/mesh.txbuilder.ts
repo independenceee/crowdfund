@@ -1,4 +1,4 @@
-import { deserializeAddress, mConStr0, mPubKeyAddress, resolveSlotNo } from "@meshsdk/core";
+import { deserializeAddress, mConStr0, mPubKeyAddress, resolveSlotNo, MPubKeyAddress } from "@meshsdk/core";
 import { MeshAdapter } from "../adapters/mesh.adapter";
 import { APP_NETWORK } from "@/constants/enviroments";
 
@@ -11,34 +11,22 @@ export class MeshTxBuilder extends MeshAdapter {
             return datum.beneficiary === beneficiary && datum.deadline === deadline && datum.goal === goal;
         });
 
-
         const unsignedTx = this.meshTxBuilder;
+
+        const contributions = new Map<MPubKeyAddress, number>();
 
         if (utxo) {
             const datum = this.convertDatum({ plutusData: utxo.output.plutusData as string });
             const existingContribution = datum.contributions.find((c) => c.address === walletAddress);
-
-            console.log(datum);
-
             const newQuantity = existingContribution ? existingContribution.quantity + Number(quantity) : Number(quantity);
 
-            const updatedContributions = [
-                ...datum.contributions.filter((c) => c.address !== walletAddress),
-                { address: walletAddress, quantity: newQuantity },
-            ];
-
-            console.log(
-                mConStr0([
-                    mPubKeyAddress(deserializeAddress(datum.beneficiary).pubKeyHash, deserializeAddress(datum.beneficiary).stakeCredentialHash),
-                    BigInt(datum.goal),
-                    BigInt(datum.deadline),
-                    updatedContributions.map((c) =>
-                        mConStr0([
-                            mPubKeyAddress(deserializeAddress(c.address).pubKeyHash, deserializeAddress(c.address).stakeCredentialHash),
-                            BigInt(c.quantity),
-                        ]),
-                    ),
-                ]),
+            [...datum.contributions.filter((c) => c.address !== walletAddress), { address: walletAddress, quantity: newQuantity }].forEach(
+                ({ address, quantity }) => {
+                    contributions.set(
+                        mPubKeyAddress(deserializeAddress(address).pubKeyHash, deserializeAddress(address).stakeCredentialHash),
+                        quantity,
+                    );
+                },
             );
 
             unsignedTx
@@ -55,20 +43,19 @@ export class MeshTxBuilder extends MeshAdapter {
                 ])
                 .txOutInlineDatumValue(
                     mConStr0([
-                        mPubKeyAddress(deserializeAddress(datum.beneficiary).pubKeyHash, deserializeAddress(datum.beneficiary).stakeCredentialHash),
-                        BigInt(datum.goal),
-                        BigInt(datum.deadline),
-                        updatedContributions.map((c) =>
-                            mConStr0([
-                                mPubKeyAddress(deserializeAddress(c.address).pubKeyHash, deserializeAddress(c.address).stakeCredentialHash),
-                                BigInt(c.quantity),
-                            ]),
-                        ),
+                        mPubKeyAddress(deserializeAddress(beneficiary).pubKeyHash, deserializeAddress(beneficiary).stakeCredentialHash),
+                        BigInt(goal),
+                        BigInt(deadline),
+                        contributions,
                     ]),
                 )
                 .invalidBefore(Number(resolveSlotNo(APP_NETWORK, Date.now())) - 200)
                 .invalidHereafter(Number(resolveSlotNo(APP_NETWORK, Date.now())) + 1000);
         } else {
+            contributions.set(
+                mPubKeyAddress(deserializeAddress(walletAddress).pubKeyHash, deserializeAddress(walletAddress).stakeCredentialHash),
+                quantity,
+            );
             unsignedTx
                 .txOut(this.spendAddress, [
                     {
@@ -81,12 +68,7 @@ export class MeshTxBuilder extends MeshAdapter {
                         mPubKeyAddress(deserializeAddress(beneficiary).pubKeyHash, deserializeAddress(beneficiary).stakeCredentialHash),
                         BigInt(goal),
                         BigInt(deadline),
-                        [
-                            mConStr0([
-                                mPubKeyAddress(deserializeAddress(walletAddress).pubKeyHash, deserializeAddress(walletAddress).stakeCredentialHash),
-                                BigInt(quantity),
-                            ]),
-                        ],
+                        contributions,
                     ]),
                 );
         }

@@ -222,6 +222,7 @@ export class MeshAdapter {
         try {
             const datum = deserializeDatum(plutusData);
 
+
             const buildAddress = (paymentHex: string, stakeHex?: string): string => {
                 if (!paymentHex || paymentHex.length !== 56) {
                     throw new Error(`Invalid payment credential: ${paymentHex}`);
@@ -248,31 +249,21 @@ export class MeshAdapter {
             const goal = Number(datum.fields?.[1]?.int);
             const deadline = Number(datum.fields?.[2]?.int);
             const contributions: { address: string; quantity: number }[] = [];
-            const contributionList = datum.fields?.[3]?.list ?? [];
-            for (const item of contributionList) {
-                const contributionFields = item?.fields ?? [];
+            const contributionMap = datum.fields?.[3]?.map ?? [];
 
-                if (contributionFields.length < 2) {
-                    console.warn("Skipping invalid contribution: format mismatch");
-                    continue;
-                }
+            for (const item of contributionMap) {
+                const addressDatum = item.k;
+                const quantity = Number(item.v?.int);
 
                 try {
-                    const address = parseAddress(contributionFields[0]);
-                    const quantity = Number(contributionFields[1]?.int);
-
+                    const address = parseAddress(addressDatum);
                     contributions.push({ address, quantity });
                 } catch (err) {
                     console.warn("Skipping invalid contribution:", err);
                 }
             }
 
-            return {
-                beneficiary,
-                goal,
-                deadline,
-                contributions,
-            };
+            return { beneficiary, goal, deadline, contributions };
         } catch (err) {
             try {
                 console.dir(deserializeDatum(plutusData), { depth: null });

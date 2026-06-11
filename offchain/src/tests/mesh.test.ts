@@ -15,7 +15,7 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
 
     beforeEach(async function () {
         meshWallet = new MeshWallet({
-            accountIndex: 1,
+            accountIndex: 0,
             networkId: APP_NETWORK_ID,
             fetcher: blockfrostProvider,
             submitter: blockfrostProvider,
@@ -36,11 +36,11 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
 
         await meshTxBuilder.initalize();
 
-        console.log(Date.now() + 2 * 60 * 1000);
+        console.log(Date.now() + 20 * 60 * 1000);
 
         const unsignedTx: string = await meshTxBuilder.donate({
             beneficiary: "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g",
-            deadline: 1781187488532,
+            deadline: 1781194584300,
             goal: 100 * DECIMAL_PLACE,
             quantity: 10 * DECIMAL_PLACE,
         });
