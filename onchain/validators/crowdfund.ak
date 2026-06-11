@@ -186,7 +186,6 @@ validator crowdfund {
       }
       Withdraw -> {
         let lovelace_input = lovelace_of(input.output.value)
-        
         let total_contributions = pairs.foldl(
           datum_input.contributions,
           0,

@@ -308,7 +308,6 @@ test donate_fail_tamper_campaign_info() {
 
   let tampered_goal: Int = 500_000_000
   let contributions = [Pair(donor_address, 50_000_000)]
-  
   let datum_output = Datum {
     beneficiary: beneficiary_address,
     goal: tampered_goal,
@@ -332,7 +331,12 @@ test donate_fail_tamper_campaign_info() {
         },
       )
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: an attacker attempts to alter the beneficiary address in the output datum to their own wallet.
@@ -353,18 +357,17 @@ test donate_fail_tamper_beneficiary() {
 
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [],
   }
 
   let contributions = [Pair(donor_address, 50_000_000)]
-  
   let datum_output = Datum {
     beneficiary: attacker_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -374,7 +377,7 @@ test donate_fail_tamper_beneficiary() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(100_000_000),
@@ -384,7 +387,12 @@ test donate_fail_tamper_beneficiary() {
       )
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 // !sad path: an attacker attempts to secretly decrease another donor's accumulated contribution amount in the output datum.
@@ -403,16 +411,18 @@ test donate_fail_reduce_other_contribution() {
   let initial_contributions = [Pair(innocent_donor, 100_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
-  let tampered_contributions = [Pair(innocent_donor, 40_000_000), Pair(attacker_address, 60_000_000)]
+  let tampered_contributions = [
+    Pair(innocent_donor, 40_000_000), Pair(attacker_address, 60_000_000),
+  ]
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: tampered_contributions,
   }
 
@@ -423,7 +433,7 @@ test donate_fail_reduce_other_contribution() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(100_000_000),
@@ -434,7 +444,12 @@ test donate_fail_reduce_other_contribution() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: the actual ada increase in the script output does not match the total added amounts declared in the contributions datum.
@@ -451,17 +466,17 @@ test donate_fail_mismatch_value_and_datum() {
 
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [],
   }
 
   let contributions = [Pair(donor_address, 50_000_000)]
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -471,7 +486,7 @@ test donate_fail_mismatch_value_and_datum() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(100_000_000),
@@ -482,7 +497,12 @@ test donate_fail_mismatch_value_and_datum() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: an attacker generates multiple script outputs in a single transaction to perform a double-satisfaction attack.
@@ -499,17 +519,17 @@ test donate_fail_multiple_script_outputs() {
 
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [],
   }
 
   let contributions = [Pair(donor_address, 50_000_000)]
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -521,7 +541,7 @@ test donate_fail_multiple_script_outputs() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(100_000_000),
@@ -532,7 +552,12 @@ test donate_fail_multiple_script_outputs() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! success path: the campaign failed after passing the deadline without meeting the goal. a donor successfully reclaims their funds.
@@ -550,15 +575,15 @@ test reclaim_success_past_deadline() {
   let initial_contributions = [Pair(donor_address, 150_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [],
   }
 
@@ -571,7 +596,7 @@ test reclaim_success_past_deadline() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(250_000_000),
@@ -580,9 +605,17 @@ test reclaim_success_past_deadline() {
         },
       )
 
-  let valid_tx = Transaction { ..tx, validity_range: interval.between(100_001, 105_000) }
+  let valid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(100_001, 105_000),
+  }
 
-  crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! success path: the last remaining contributor reclaims their funds, consuming the script utxo entirely and closing the campaign.
@@ -600,8 +633,8 @@ test reclaim_success_last_contributor() {
   let initial_contributions = [Pair(donor_address, 150_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
@@ -612,7 +645,7 @@ test reclaim_success_last_contributor() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(150_000_000),
@@ -621,9 +654,17 @@ test reclaim_success_last_contributor() {
         },
       )
 
-  let valid_tx = Transaction { ..tx, validity_range: interval.between(100_001, 105_000) }
+  let valid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(100_001, 105_000),
+  }
 
-  crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: a donor attempts to reclaim their funds before the campaign's deadline has passed.
@@ -641,15 +682,15 @@ test reclaim_fail_before_deadline() {
   let initial_contributions = [Pair(donor_address, 150_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [],
   }
 
@@ -662,7 +703,7 @@ test reclaim_fail_before_deadline() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(250_000_000),
@@ -671,9 +712,17 @@ test reclaim_fail_before_deadline() {
         },
       )
 
-  let invalid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
+  let invalid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(10, 50),
+  }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, invalid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    invalid_tx,
+  )
 }
 
 //! sad path: an unauthorized user attempts to reclaim funds but their address is not present in the contributions list.
@@ -691,8 +740,8 @@ test reclaim_fail_not_a_contributor() {
   let initial_contributions = [Pair(donor_address, 150_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
@@ -704,7 +753,7 @@ test reclaim_fail_not_a_contributor() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(250_000_000),
@@ -713,9 +762,17 @@ test reclaim_fail_not_a_contributor() {
         },
       )
 
-  let valid_tx = Transaction { ..tx, validity_range: interval.between(100_001, 105_000) }
+  let valid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(100_001, 105_000),
+  }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: a transaction includes multiple required signers to reclaim simultaneously, which fails the one-reclaimer-per-tx constraint.
@@ -731,18 +788,20 @@ test reclaim_fail_multiple_signers_spam() {
   let goal: Int = 1_000_000_000
   let deadline: Int = 100_000
 
-  let initial_contributions = [Pair(donor_one, 150_000_000), Pair(donor_two, 200_000_000)]
+  let initial_contributions = [
+    Pair(donor_one, 150_000_000), Pair(donor_two, 200_000_000),
+  ]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [Pair(donor_two, 200_000_000)],
   }
 
@@ -756,7 +815,7 @@ test reclaim_fail_multiple_signers_spam() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(450_000_000),
@@ -765,9 +824,17 @@ test reclaim_fail_multiple_signers_spam() {
         },
       )
 
-  let valid_tx = Transaction { ..tx, validity_range: interval.between(100_001, 105_000) }
+  let valid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(100_001, 105_000),
+  }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: a donor attempts to reclaim their funds but the transaction output pays them less ada than their actual contribution amount.
@@ -785,15 +852,15 @@ test reclaim_fail_insufficient_output() {
   let initial_contributions = [Pair(donor_address, 150_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [],
   }
 
@@ -806,7 +873,7 @@ test reclaim_fail_insufficient_output() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(250_000_000),
@@ -815,9 +882,17 @@ test reclaim_fail_insufficient_output() {
         },
       )
 
-  let valid_tx = Transaction { ..tx, validity_range: interval.between(100_001, 105_000) }
+  let valid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(100_001, 105_000),
+  }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: a reclaimer attempts to alter the remaining contributions or metadata of other donors in the output datum.
@@ -833,19 +908,21 @@ test reclaim_fail_tamper_remaining_datum() {
   let goal: Int = 1_000_000_000
   let deadline: Int = 100_000
 
-  let initial_contributions = [Pair(donor_one, 150_000_000), Pair(innocent_donor, 200_000_000)]
+  let initial_contributions = [
+    Pair(donor_one, 150_000_000), Pair(innocent_donor, 200_000_000),
+  ]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
   let tampered_contributions = [Pair(innocent_donor, 50_000_000)]
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: tampered_contributions,
   }
 
@@ -858,7 +935,7 @@ test reclaim_fail_tamper_remaining_datum() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(450_000_000),
@@ -867,9 +944,17 @@ test reclaim_fail_tamper_remaining_datum() {
         },
       )
 
-  let valid_tx = Transaction { ..tx, validity_range: interval.between(100_001, 105_000) }
+  let valid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(100_001, 105_000),
+  }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: a reclaimer attempts to withdraw more ada than their contribution amount, leaving the script with less funds than expected.
@@ -885,18 +970,20 @@ test reclaim_fail_script_value_mismatch() {
   let goal: Int = 1_000_000_000
   let deadline: Int = 100_000
 
-  let initial_contributions = [Pair(donor_one, 150_000_000), Pair(innocent_donor, 200_000_000)]
+  let initial_contributions = [
+    Pair(donor_one, 150_000_000), Pair(innocent_donor, 200_000_000),
+  ]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [Pair(innocent_donor, 200_000_000)],
   }
 
@@ -909,7 +996,7 @@ test reclaim_fail_script_value_mismatch() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(450_000_000),
@@ -918,9 +1005,17 @@ test reclaim_fail_script_value_mismatch() {
         },
       )
 
-  let valid_tx = Transaction { ..tx, validity_range: interval.between(100_001, 105_000) }
+  let valid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(100_001, 105_000),
+  }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: a reclaimer attempts to modify core campaign metadata (beneficiary, goal, or deadline) in the continuing script output.
@@ -936,18 +1031,20 @@ test reclaim_fail_alter_campaign_metadata() {
   let goal: Int = 1_000_000_000
   let deadline: Int = 100_000
 
-  let initial_contributions = [Pair(donor_one, 150_000_000), Pair(innocent_donor, 200_000_000)]
+  let initial_contributions = [
+    Pair(donor_one, 150_000_000), Pair(innocent_donor, 200_000_000),
+  ]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
   let datum_output = Datum {
     beneficiary: beneficiary_address,
     goal: 500_000_000,
-    deadline: deadline,
+    deadline,
     contributions: [Pair(innocent_donor, 200_000_000)],
   }
 
@@ -960,7 +1057,7 @@ test reclaim_fail_alter_campaign_metadata() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(450_000_000),
@@ -969,9 +1066,17 @@ test reclaim_fail_alter_campaign_metadata() {
         },
       )
 
-  let valid_tx = Transaction { ..tx, validity_range: interval.between(100_001, 105_000) }
+  let valid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(100_001, 105_000),
+  }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: a donor attempts to reclaim funds but the transaction validity range is invalid or falls before the campaign deadline.
@@ -989,15 +1094,15 @@ test reclaim_fail_invalid_validity_range() {
   let initial_contributions = [Pair(donor_address, 150_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: initial_contributions,
   }
 
   let datum_output = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [],
   }
 
@@ -1010,7 +1115,7 @@ test reclaim_fail_invalid_validity_range() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(250_000_000),
@@ -1019,9 +1124,17 @@ test reclaim_fail_invalid_validity_range() {
         },
       )
 
-  let invalid_tx = Transaction { ..tx, validity_range: interval.between(90_000, 95_000) }
+  let invalid_tx = Transaction {
+    ..tx,
+    validity_range: interval.between(90_000, 95_000),
+  }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, invalid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    invalid_tx,
+  )
 }
 
 //! success path: the total accumulated contributions reach the goal exactly, and the beneficiary successfully withdraws all funds.
@@ -1039,9 +1152,9 @@ test withdraw_success_goal_met_exact() {
   let contributions = [Pair(donor_address, 1_000_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -1051,7 +1164,7 @@ test withdraw_success_goal_met_exact() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(1_000_000_000),
@@ -1062,7 +1175,12 @@ test withdraw_success_goal_met_exact() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! success path: total contributions exceed the target goal, and the beneficiary successfully withdraws the entire accumulated balance.
@@ -1080,9 +1198,9 @@ test withdraw_success_goal_met_exceeded() {
   let contributions = [Pair(donor_address, 1_500_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -1092,7 +1210,7 @@ test withdraw_success_goal_met_exceeded() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(1_500_000_000),
@@ -1103,7 +1221,12 @@ test withdraw_success_goal_met_exceeded() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: the accumulated contributions are below the goal, and the beneficiary tries to execute an early withdrawal.
@@ -1121,9 +1244,9 @@ test withdraw_fail_goal_not_met() {
   let contributions = [Pair(donor_address, 500_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -1133,7 +1256,7 @@ test withdraw_fail_goal_not_met() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(500_000_000),
@@ -1144,7 +1267,12 @@ test withdraw_fail_goal_not_met() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: the campaign succeeds, but an attacker attempts to sign the withdrawal instead of the configured beneficiary.
@@ -1162,19 +1290,20 @@ test withdraw_fail_wrong_beneficiary_signature() {
   let contributions = [Pair(donor_address, 1_000_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
     |> tx_out(True, beneficiary_address, from_lovelace(1_000_000_000))
-    |> required_signer_hash(True, mock_pub_key_hash(3)) // Wrong signature from PKH 3
+    |> required_signer_hash(True, mock_pub_key_hash(3))
+    // Wrong signature from PKH 3
     |> complete()
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(1_000_000_000),
@@ -1185,7 +1314,12 @@ test withdraw_fail_wrong_beneficiary_signature() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: the withdrawal transaction is structured correctly but completely misses the beneficiary's signature in the required signers.
@@ -1203,9 +1337,9 @@ test withdraw_fail_missing_signature() {
   let contributions = [Pair(donor_address, 1_000_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -1215,7 +1349,7 @@ test withdraw_fail_missing_signature() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(1_000_000_000),
@@ -1226,7 +1360,12 @@ test withdraw_fail_missing_signature() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: a misconfigured campaign sets a script address as the beneficiary, causing signature verification to fail.
@@ -1234,7 +1373,8 @@ test withdraw_fail_invalid_beneficiary_address() {
   let redeemer: Redeemer = Withdraw
   let output_reference: OutputReference = mock_utxo_ref(0, 0)
 
-  let beneficiary_address: Address = mock_script_address(99, None) // Misconfigured script address instead of a standard pubkey credential
+  let beneficiary_address: Address = mock_script_address(99, None)
+  // Misconfigured script address instead of a standard pubkey credential
   let donor_address: Address = mock_pub_key_address(2, None)
   let script_address: Address = mock_script_address(1, None)
 
@@ -1244,9 +1384,9 @@ test withdraw_fail_invalid_beneficiary_address() {
   let contributions = [Pair(donor_address, 1_000_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -1256,7 +1396,7 @@ test withdraw_fail_invalid_beneficiary_address() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(1_000_000_000),
@@ -1267,7 +1407,12 @@ test withdraw_fail_invalid_beneficiary_address() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 // sad path: an attacker provides a manipulated inline datum stating the goal is reached to trick the validator during consumption.
@@ -1284,8 +1429,8 @@ test withdraw_fail_fake_datum_injection() {
 
   let actual_datum = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [Pair(donor_address, 500_000_000)],
   }
 
@@ -1296,7 +1441,7 @@ test withdraw_fail_fake_datum_injection() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(500_000_000),
@@ -1307,7 +1452,12 @@ test withdraw_fail_fake_datum_injection() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(actual_datum), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(actual_datum),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 // sad path: the beneficiary attempts to partially withdraw funds, leaving a remainder at the script instead of consuming it cleanly.
@@ -1325,9 +1475,9 @@ test withdraw_fail_partial_withdraw() {
   let contributions = [Pair(donor_address, 1_000_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -1339,7 +1489,7 @@ test withdraw_fail_partial_withdraw() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(1_000_000_000),
@@ -1350,7 +1500,12 @@ test withdraw_fail_partial_withdraw() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: a completely empty pool with no contributions tries to invoke withdraw to trigger edge-case logic errors.
@@ -1366,8 +1521,8 @@ test withdraw_fail_empty_pool_withdraw() {
 
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
+    goal,
+    deadline,
     contributions: [],
   }
 
@@ -1378,7 +1533,7 @@ test withdraw_fail_empty_pool_withdraw() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(0),
@@ -1389,7 +1544,12 @@ test withdraw_fail_empty_pool_withdraw() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
 
 //! sad path: the beneficiary signs off on the withdrawal but redirects the funds to an unauthorized external wallet.
@@ -1408,9 +1568,9 @@ test withdraw_fail_alter_outputs() {
   let contributions = [Pair(donor_address, 1_000_000_000)]
   let datum_input = Datum {
     beneficiary: beneficiary_address,
-    goal: goal,
-    deadline: deadline,
-    contributions: contributions,
+    goal,
+    deadline,
+    contributions,
   }
 
   let tx: Transaction = mocktail_tx()
@@ -1420,7 +1580,7 @@ test withdraw_fail_alter_outputs() {
     |> add_input(
         True,
         Input {
-          output_reference: output_reference,
+          output_reference,
           output: mock_script_output(
             script_address,
             from_lovelace(1_000_000_000),
@@ -1431,5 +1591,10 @@ test withdraw_fail_alter_outputs() {
 
   let valid_tx = Transaction { ..tx, validity_range: interval.between(10, 50) }
 
-  !crowdfund.crowdfund.spend(Some(datum_input), redeemer, output_reference, valid_tx)
+  !crowdfund.crowdfund.spend(
+    Some(datum_input),
+    redeemer,
+    output_reference,
+    valid_tx,
+  )
 }
