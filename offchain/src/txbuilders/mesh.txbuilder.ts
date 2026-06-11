@@ -1,4 +1,4 @@
-import { deserializeAddress, mConStr0, mPubKeyAddress, resolveSlotNo, MPubKeyAddress, mConStr1 } from "@meshsdk/core";
+import { deserializeAddress, mConStr0, mPubKeyAddress, resolveSlotNo, MPubKeyAddress, mConStr1, mConStr2 } from "@meshsdk/core";
 import { MeshAdapter } from "../adapters/mesh.adapter";
 import { APP_NETWORK } from "@/constants/enviroments";
 
@@ -91,7 +91,9 @@ export class MeshTxBuilder extends MeshAdapter {
             return datum.beneficiary === beneficiary && datum.deadline === deadline && datum.goal === goal;
         });
         if (!utxo) {
-            throw Error("");
+            throw Error(
+                "The specified crowdfund campaign was not found for reclaiming. Please check the beneficiary, deadline, and goal parameters.",
+            );
         }
 
         const datum = this.convertDatum({ plutusData: utxo.output.plutusData as string });
@@ -125,5 +127,42 @@ export class MeshTxBuilder extends MeshAdapter {
         return await unsignedTx.complete();
     };
 
-    withdraw = async ({ goal, deadline, beneficiary }: { goal: number; deadline: number; beneficiary: string }) => {};
+    withdraw = async ({ goal, deadline, beneficiary }: { goal: number; deadline: number; beneficiary: string }) => {
+        const { utxos, walletAddress, collateral } = await this.getWalletForTx();
+        const utxo = (await this.fetcher.fetchAddressUTxOs(this.spendAddress)).find((utxo) => {
+            const datum = this.convertDatum({ plutusData: utxo.output.plutusData as string });
+
+            return datum.beneficiary === beneficiary && datum.deadline === deadline && datum.goal === goal;
+        });
+
+        if (!utxo) {
+            throw Error("Crowdfund campaign not found for the specified beneficiary, deadline, and goal.");
+        }
+
+        const datum = this.convertDatum({ plutusData: utxo.output.plutusData as string });
+
+        if (datum.contributions.reduce((s, c) => s + c.quantity, 0) < datum.goal || Number(datum.deadline) > Date.now()) {
+            throw new Error("Goal not reached or deadline not passed, cannot withdraw.");
+        }
+
+        const unsignedTx = this.meshTxBuilder;
+
+        unsignedTx
+            .spendingPlutusScriptV3()
+            .txIn(utxo.input.txHash, utxo.input.outputIndex)
+            .txInInlineDatumPresent()
+            .txInRedeemerValue(mConStr2([]))
+            .txInScript(this.spendScriptCbor)
+            .txOut(datum.beneficiary, utxo.output.amount)
+            .invalidBefore(Number(resolveSlotNo(APP_NETWORK, datum.deadline)) + 1);
+
+        unsignedTx
+            .selectUtxosFrom(utxos)
+            .changeAddress(walletAddress)
+            .requiredSignerHash(deserializeAddress(datum.beneficiary).pubKeyHash)
+            .txInCollateral(collateral.input.txHash, collateral.input.outputIndex)
+            .setNetwork(APP_NETWORK);
+
+        return await unsignedTx.complete();
+    };
 }
