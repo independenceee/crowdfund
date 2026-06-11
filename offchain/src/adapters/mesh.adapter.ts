@@ -29,9 +29,6 @@ import { APP_NETWORK_ID } from "../constants/enviroments";
  */
 export class MeshAdapter {
     public spendAddress: string;
-    public name: string;
-    public threshold: number;
-    public allowance: number;
 
     protected spendCompileCode: string;
     protected spendScriptCbor: string;
@@ -51,25 +48,12 @@ export class MeshAdapter {
      *
      * @param {MeshWallet} meshWallet - Active Mesh wallet instance to connect.
      */
-    constructor({
-        meshWallet = null!,
-        threshold = 1,
-        allowance = 10 * DECIMAL_PLACE,
-        name,
-    }: {
-        meshWallet: MeshWallet;
-        threshold?: number;
-        allowance: number;
-        name: string;
-    }) {
+    constructor({ meshWallet = null! }: { meshWallet: MeshWallet }) {
         this.meshWallet = meshWallet;
-        this.threshold = threshold;
-        this.allowance = allowance;
-        this.name = name;
         this.fetcher = blockfrostProvider;
 
         this.spendCompileCode = this.readValidator(plutus as Plutus, title.crowdfund);
-        this.spendScriptCbor = applyParamsToScript(this.spendCompileCode, [this.threshold, this.allowance]);
+        this.spendScriptCbor = applyParamsToScript(this.spendCompileCode, []);
         this.spendScript = {
             code: this.spendScriptCbor,
             version: "V3",
@@ -163,7 +147,7 @@ export class MeshAdapter {
      * @returns {Promise<UTxO>}
      *          The last matching UTxO for the specified asset.
      */
-    protected getAddressUTXOAsset = async (address: string, unit: string) => {
+    protected getAddressUTXOAsset = async (address: string, unit: string): Promise<UTxO> => {
         const utxos = await this.fetcher.fetchAddressUTxOs(address, unit);
         return utxos[utxos.length - 1];
     };
@@ -178,7 +162,7 @@ export class MeshAdapter {
      * @returns {Promise<UTxO[]>}
      *          List of UTxOs with the specified asset.
      */
-    protected getAddressUTXOAssets = async (address: string, unit: string) => {
+    protected getAddressUTXOAssets = async (address: string, unit: string): Promise<UTxO[]> => {
         return await this.fetcher.fetchAddressUTxOs(address, unit);
     };
 
@@ -230,58 +214,70 @@ export class MeshAdapter {
     }: {
         plutusData: string;
     }): {
-        receiver: string;
-        owners: string[];
-        signers: string[];
+        beneficiary: string;
+        goal: number;
+        deadline: number;
+        contributions: { address: string; quantity: number }[];
     } => {
         try {
             const datum = deserializeDatum(plutusData);
 
             const buildAddress = (paymentHex: string, stakeHex?: string): string => {
-                if (typeof paymentHex !== "string" || paymentHex.length !== 56) {
-                    throw new Error(`Invalid payment hex length (expected 56): ${paymentHex}`);
+                if (!paymentHex || paymentHex.length !== 56) {
+                    throw new Error(`Invalid payment credential: ${paymentHex}`);
                 }
                 if (stakeHex && stakeHex.length !== 56) {
-                    throw new Error(`Invalid stake hex length (expected 56): ${stakeHex}`);
+                    throw new Error(`Invalid stake credential: ${stakeHex}`);
                 }
-                return serializeAddressObj(pubKeyAddress(paymentHex, stakeHex || "", false), APP_NETWORK_ID);
+                return serializeAddressObj(pubKeyAddress(paymentHex, stakeHex ?? "", false), APP_NETWORK_ID);
             };
 
-            const receiverPayment = datum.fields?.[0]?.fields?.[0]?.fields?.[0]?.bytes;
-            const receiverStake = datum.fields?.[0]?.fields?.[1]?.fields?.[0]?.fields?.[0]?.fields?.[0]?.bytes;
+            const parseAddress = (addressDatum: any): string => {
+                if (!addressDatum?.fields) {
+                    throw new Error("Invalid address datum");
+                }
+                const paymentHex = addressDatum?.fields?.[0]?.fields?.[0]?.bytes;
+                const stakeHex = addressDatum?.fields?.[1]?.fields?.[0]?.fields?.[0]?.fields?.[0]?.bytes;
+                if (!paymentHex) {
+                    throw new Error("Missing payment credential");
+                }
+                return buildAddress(paymentHex, stakeHex);
+            };
+            const beneficiaryDatum = datum.fields?.[0];
+            const beneficiary = parseAddress(beneficiaryDatum);
+            const goal = Number(datum.fields?.[1]?.int);
+            const deadline = Number(datum.fields?.[2]?.int);
+            const contributions: { address: string; quantity: number }[] = [];
+            const contributionList = datum.fields?.[3]?.list ?? [];
+            for (const item of contributionList) {
+                const contributionFields = item?.fields ?? [];
 
-            if (!receiverPayment) {
-                throw new Error("Missing receiver payment credential.");
+                if (contributionFields.length < 2) {
+                    console.warn("Skipping invalid contribution: format mismatch");
+                    continue;
+                }
+
+                try {
+                    const address = parseAddress(contributionFields[0]);
+                    const quantity = Number(contributionFields[1]?.int);
+
+                    contributions.push({ address, quantity });
+                } catch (err) {
+                    console.warn("Skipping invalid contribution:", err);
+                }
             }
 
-            const receiver = buildAddress(receiverPayment, receiverStake);
-
-            const ownersList = datum.fields?.[1]?.list || [];
-            const owners = ownersList.map((item: any, index: number) => {
-                const payment = item?.fields?.[0]?.fields?.[0]?.bytes;
-                const stake = item?.fields?.[1]?.fields?.[0]?.fields?.[0]?.fields?.[0]?.bytes;
-
-                if (!payment) {
-                    throw new Error(`Owner #${index + 1} missing payment.`);
-                }
-
-                return buildAddress(payment, stake);
-            });
-
-            const signersList = datum.fields?.[2]?.list || [];
-            const signers = signersList.map((item: any, index: number) => {
-                const payment = item?.fields?.[0]?.fields?.[0]?.bytes;
-                const stake = item?.fields?.[1]?.fields?.[0]?.fields?.[0]?.fields?.[0]?.bytes;
-
-                if (!payment) {
-                    throw new Error(`Signer #${index + 1} missing payment.`);
-                }
-
-                return buildAddress(payment, stake);
-            });
-
-            return { receiver, owners, signers };
+            return {
+                beneficiary,
+                goal,
+                deadline,
+                contributions,
+            };
         } catch (err) {
+            try {
+                console.dir(deserializeDatum(plutusData), { depth: null });
+            } catch {}
+
             throw new Error(`Invalid Plutus datum: ${err instanceof Error ? err.message : String(err)}`);
         }
     };

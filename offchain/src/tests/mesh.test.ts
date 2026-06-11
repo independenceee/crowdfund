@@ -4,7 +4,7 @@ import { blockfrostProvider } from "../providers/cardano/blockfrost";
 import { APP_MNEMONIC, APP_NETWORK, APP_NETWORK_ID } from "../constants/enviroments";
 import { DECIMAL_PLACE } from "../constants/common";
 
-describe("A multisig treasury is a shared fund where spending requires approval from at least m of n participants, with a predefined spending limit for security.", function () {
+describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTxO model. Each fundraising campaign acts as an autonomous smart contract entity.", function () {
     let meshWallet: MeshWallet;
 
     // account 0 - addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g
@@ -15,7 +15,7 @@ describe("A multisig treasury is a shared fund where spending requires approval 
 
     beforeEach(async function () {
         meshWallet = new MeshWallet({
-            accountIndex: 0,
+            accountIndex: 1,
             networkId: APP_NETWORK_ID,
             fetcher: blockfrostProvider,
             submitter: blockfrostProvider,
@@ -28,120 +28,25 @@ describe("A multisig treasury is a shared fund where spending requires approval 
 
     jest.setTimeout(600000000);
 
-    test("Init", async function () {
-        return;
-        const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
-            meshWallet: meshWallet,
-            threshold: 2,
-            allowance: 20 * DECIMAL_PLACE,
-            name: "Aiken Course 2026",
-        });
-
-        await meshTxBuilder.initalize();
-
-        const unsignedTx: string = await meshTxBuilder.init({
-            receiver: "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g",
-            owners: [
-                "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g",
-                "addr_test1qr39uar0u87xrmptw0f8ryx5mp3scvc3pkehp57yj5zhugxdgese6p77sy9hk0rqc5wqd6n8vmfyqq9f7sdfz9dm0azqzmmdew",
-            ],
-        });
-
-        const signedTx = await meshWallet.signTx(unsignedTx, true);
-
-        const txHash = await meshWallet.submitTx(signedTx);
-        await new Promise<void>(function (resolve) {
-            blockfrostProvider.onTxConfirmed(txHash, () => {
-                console.log("https://" + APP_NETWORK + ".cexplorer.io/tx/" + txHash);
-                resolve();
-            });
-        });
-    });
-
-    test("Deposit", async function () {
-        return;
-        const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
-            meshWallet: meshWallet,
-            threshold: 2,
-            allowance: 20 * DECIMAL_PLACE,
-            name: "Aiken Course 2026",
-        });
-
-        await meshTxBuilder.initalize();
-        const unsignedTx: string = await meshTxBuilder.deposit({
-            quantity: String(10 * DECIMAL_PLACE),
-        });
-
-        const signedTx = await meshWallet.signTx(unsignedTx, true);
-        const txHash = await meshWallet.submitTx(signedTx);
-        await new Promise<void>(function (resolve) {
-            blockfrostProvider.onTxConfirmed(txHash, () => {
-                console.log("https://" + APP_NETWORK + ".cexplorer.io/tx/" + txHash);
-                resolve();
-            });
-        });
-    });
-
-    test("Signature", async function () {
-        return;
-        const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
-            meshWallet: meshWallet,
-            threshold: 2,
-            allowance: 20 * DECIMAL_PLACE,
-            name: "Aiken Course 2026",
-        });
-        await meshTxBuilder.initalize();
-
-        const unsignedTx: string = await meshTxBuilder.signature();
-
-        const signedTx = await meshWallet.signTx(unsignedTx, true);
-        const txHash = await meshWallet.submitTx(signedTx);
-        await new Promise<void>(function (resolve) {
-            blockfrostProvider.onTxConfirmed(txHash, () => {
-                console.log("https://" + APP_NETWORK + ".cexplorer.io/tx/" + txHash);
-                resolve();
-            });
-        });
-    });
-
-    test("Execute", async function () {
-        return;
-        const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
-            meshWallet: meshWallet,
-            threshold: 2,
-            allowance: 20 * DECIMAL_PLACE,
-            name: "Aiken Course 2026",
-        });
-
-        await meshTxBuilder.initalize();
-        const unsignedTx: string = await meshTxBuilder.execute({
-            amount: String(20 * DECIMAL_PLACE),
-        });
-
-        const signedTx = await meshWallet.signTx(unsignedTx, true);
-        const txHash = await meshWallet.submitTx(signedTx);
-        await new Promise<void>(function (resolve) {
-            blockfrostProvider.onTxConfirmed(txHash, () => {
-                console.log("https://" + APP_NETWORK + ".cexplorer.io/tx/" + txHash);
-                resolve();
-            });
-        });
-    });
-
-    test("End", async function () {
+    test("Donate", async function () {
         // return;
         const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
             meshWallet: meshWallet,
-            threshold: 2,
-            allowance: 20 * DECIMAL_PLACE,
-            name: "Aiken Course 2026",
         });
 
         await meshTxBuilder.initalize();
 
-        const unsignedTx: string = await meshTxBuilder.end();
+        console.log(Date.now() + 2 * 60 * 1000);
+
+        const unsignedTx: string = await meshTxBuilder.donate({
+            beneficiary: "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g",
+            deadline: 1781187488532,
+            goal: 100 * DECIMAL_PLACE,
+            quantity: 10 * DECIMAL_PLACE,
+        });
 
         const signedTx = await meshWallet.signTx(unsignedTx, true);
+
         const txHash = await meshWallet.submitTx(signedTx);
         await new Promise<void>(function (resolve) {
             blockfrostProvider.onTxConfirmed(txHash, () => {
@@ -149,5 +54,22 @@ describe("A multisig treasury is a shared fund where spending requires approval 
                 resolve();
             });
         });
+    });
+
+    test("Reclaim", async function () {
+        return;
+        const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
+            meshWallet: meshWallet,
+        });
+
+        await meshTxBuilder.initalize();
+    });
+
+    test("Withdraw", async function () {
+        return;
+        const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
+            meshWallet: meshWallet,
+        });
+        await meshTxBuilder.initalize();
     });
 });

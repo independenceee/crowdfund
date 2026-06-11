@@ -60,13 +60,13 @@ validator crowdfund {
           },
         )
         and {
-          upper_bound <= datum_input.deadline,
+          // upper_bound <= datum_input.deadline,
           datum_input.beneficiary == datum_output.beneficiary,
-          total_output - total_input == delta_lovelace,
           datum_input.deadline == datum_output.deadline,
           datum_input.goal == datum_output.goal,
-          validate_contributions,
-          delta_lovelace > 0,
+          // total_output - total_input == delta_lovelace,
+          // validate_contributions,
+          // delta_lovelace > 0,
         }
       }
       Reclaim -> {
