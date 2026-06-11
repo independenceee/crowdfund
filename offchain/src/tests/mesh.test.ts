@@ -29,7 +29,7 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
     jest.setTimeout(600000000);
 
     test("Donate", async function () {
-        return;
+        // return;
         const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
             meshWallet: meshWallet,
         });
@@ -41,7 +41,7 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
         const unsignedTx: string = await meshTxBuilder.donate({
             beneficiary: "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g",
             deadline: Date.now() + 2 * 60 * 1000,
-            goal: 10 * DECIMAL_PLACE,
+            goal: 30 * DECIMAL_PLACE,
             quantity: 10 * DECIMAL_PLACE,
         });
 
@@ -63,10 +63,25 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
         });
 
         await meshTxBuilder.initalize();
+        const unsignedTx: string = await meshTxBuilder.reclaim({
+            beneficiary: "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g",
+            deadline: 1781198326028,
+            goal: 10 * DECIMAL_PLACE,
+        });
+
+        const signedTx = await meshWallet.signTx(unsignedTx, true);
+
+        const txHash = await meshWallet.submitTx(signedTx);
+        await new Promise<void>(function (resolve) {
+            blockfrostProvider.onTxConfirmed(txHash, () => {
+                console.log("https://" + APP_NETWORK + ".cexplorer.io/tx/" + txHash);
+                resolve();
+            });
+        });
     });
 
     test("Withdraw", async function () {
-        // return;
+        return;
         const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
             meshWallet: meshWallet,
         });

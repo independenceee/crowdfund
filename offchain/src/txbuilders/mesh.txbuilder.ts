@@ -97,14 +97,17 @@ export class MeshTxBuilder extends MeshAdapter {
         }
 
         const datum = this.convertDatum({ plutusData: utxo.output.plutusData as string });
-        const totalContributions = datum.contributions.reduce((s, c) => s + c.quantity, 0);
-        if (totalContributions >= BigInt(datum.goal)) {
-            throw new Error("Goal đã đạt, không thể reclaim.");
-        }
 
-        const myContribution = datum.contributions.find((c) => c.address === walletAddress);
-        if (!myContribution) {
-            throw new Error("Ví này không có đóng góp trong campaign này.");
+        const totalContributions = datum.contributions.reduce((s, c) => s + c.quantity, 0);
+
+        if (
+            Date.now() < Number(datum.deadline) ||
+            totalContributions >= datum.goal ||
+            !datum.contributions.find((contribution) => contribution.address === walletAddress)
+        ) {
+            throw new Error(
+                " Cannot reclaim: either the deadline has not passed, the goal has been reached, or this wallet did not contribute to the campaign.",
+            );
         }
 
         const unsignedTx = this.meshTxBuilder;
@@ -115,7 +118,42 @@ export class MeshTxBuilder extends MeshAdapter {
             .txInInlineDatumPresent()
             .txInRedeemerValue(mConStr1([]))
             .txInScript(this.spendScriptCbor)
-            .invalidBefore(Number(resolveSlotNo(APP_NETWORK, datum.deadline)) + 1);
+            .invalidBefore(Number(resolveSlotNo(APP_NETWORK, datum.deadline)) + 1)
+            .txOut(walletAddress, [
+                {
+                    unit: "lovelace",
+                    quantity: String(datum.contributions.find((contribution) => contribution.address === walletAddress)?.quantity ?? 0),
+                },
+            ]);
+        const remainingContributions = datum.contributions.filter((c) => c.address !== walletAddress);
+        if (remainingContributions.length > 0) {
+            const contributions = new Map<MPubKeyAddress, number>();
+            remainingContributions.forEach(({ address, quantity }) => {
+                contributions.set(
+                    mPubKeyAddress(deserializeAddress(address).pubKeyHash, deserializeAddress(address).stakeCredentialHash),
+                    quantity,
+                );
+            });
+            
+            unsignedTx
+                .txOut(this.spendAddress, [
+                    {
+                        unit: "lovelace",
+                        quantity: String(
+                            Number(utxo.output.amount.find((a) => a.unit === "lovelace")?.quantity) -
+                                (datum.contributions.find((contribution) => contribution.address === walletAddress)?.quantity ?? 0),
+                        ),
+                    },
+                ])
+                .txOutInlineDatumValue(
+                    mConStr0([
+                        mPubKeyAddress(deserializeAddress(beneficiary).pubKeyHash, deserializeAddress(beneficiary).stakeCredentialHash),
+                        BigInt(goal),
+                        BigInt(deadline),
+                        contributions,
+                    ]),
+                );
+        }
 
         unsignedTx
             .selectUtxosFrom(utxos)
