@@ -15,7 +15,7 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
 
     beforeEach(async function () {
         meshWallet = new MeshWallet({
-            accountIndex: 0,
+            accountIndex: 1,
             networkId: APP_NETWORK_ID,
             fetcher: blockfrostProvider,
             submitter: blockfrostProvider,
@@ -41,7 +41,7 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
         const unsignedTx: string = await meshTxBuilder.donate({
             beneficiary: "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g",
             deadline: Date.now() + 2 * 60 * 1000,
-            goal: 30 * DECIMAL_PLACE,
+            goal: 10 * DECIMAL_PLACE,
             quantity: 10 * DECIMAL_PLACE,
         });
 
@@ -65,8 +65,8 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
         await meshTxBuilder.initalize();
         const unsignedTx: string = await meshTxBuilder.reclaim({
             beneficiary: "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g",
-            deadline: 1781198326028,
-            goal: 10 * DECIMAL_PLACE,
+            deadline: 1781200264488,
+            goal: 30 * DECIMAL_PLACE,
         });
 
         const signedTx = await meshWallet.signTx(unsignedTx, true);
@@ -90,7 +90,7 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
 
         const unsignedTx: string = await meshTxBuilder.withdraw({
             beneficiary: "addr_test1qz45qtdupp8g30lzzr684m8mc278s284cjvawna5ypwkvq7s8xszw9mgmwpxdyakl7dgpfmzywctzlsaghnqrl494wnqhgsy3g",
-            deadline: 1781198326028,
+            deadline: 1781200919436,
             goal: 10 * DECIMAL_PLACE,
         });
 
