@@ -15,7 +15,7 @@ describe("CrowdFund is a trustless crowdfunding platform built on Cardano's EUTx
 
     beforeEach(async function () {
         meshWallet = new MeshWallet({
-            accountIndex: 1,
+            accountIndex: 0,
             networkId: APP_NETWORK_ID,
             fetcher: blockfrostProvider,
             submitter: blockfrostProvider,
