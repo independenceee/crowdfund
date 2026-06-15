@@ -129,12 +129,9 @@ export class MeshTxBuilder extends MeshAdapter {
         if (remainingContributions.length > 0) {
             const contributions = new Map<MPubKeyAddress, number>();
             remainingContributions.forEach(({ address, quantity }) => {
-                contributions.set(
-                    mPubKeyAddress(deserializeAddress(address).pubKeyHash, deserializeAddress(address).stakeCredentialHash),
-                    quantity,
-                );
+                contributions.set(mPubKeyAddress(deserializeAddress(address).pubKeyHash, deserializeAddress(address).stakeCredentialHash), quantity);
             });
-            
+
             unsignedTx
                 .txOut(this.spendAddress, [
                     {

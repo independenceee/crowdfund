@@ -1,5 +1,3 @@
-
-
 export interface Redeemer {
     title: string;
     schema: {
