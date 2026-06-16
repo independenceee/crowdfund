@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { UTxO } from "@meshsdk/common";
 import type { BrowserWallet } from "@meshsdk/wallet";
+import { withdraw } from "@/actions/crowdfund.action";
 
 interface Props {
     wallet: BrowserWallet;
@@ -34,10 +35,17 @@ export default function WithdrawPanel({ wallet, address, campaignUtxo, datum, on
         setError(null);
         setTxHash(null);
         try {
-            const { withdraw } = await import("../lib/crowdfund");
-            const hash = await withdraw(wallet, campaignUtxo);
-            setTxHash(hash);
-            onSuccess(hash);
+            const unsignedTx: string = await withdraw({
+                address: await wallet.getChangeAddress(),
+                goal: datum.goal,
+                deadline: datum.deadline,
+                beneficiary: datum.beneficiary,
+            });
+            const signedTx = await wallet.signTx(unsignedTx);
+            const txHash = await wallet.submitTx(signedTx);
+
+            setTxHash(txHash);
+            onSuccess(txHash);
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err));
         } finally {
