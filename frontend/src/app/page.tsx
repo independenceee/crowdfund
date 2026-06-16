@@ -60,7 +60,7 @@ export default function Home() {
                         </div>
                         <div>
                             <h1 className="font-semibold text-white text-lg leading-none">CrowdFund</h1>
-                            <p className="text-xs text-gray-500 leading-none mt-0.5">Cardano Preview Testnet</p>
+                            <p className="text-xs text-gray-500 leading-none mt-0.5">Cardano Preprod Testnet</p>
                         </div>
                     </div>
                     <WalletConnect walletState={walletState} />
@@ -204,12 +204,12 @@ export default function Home() {
             </div>
 
             {/* Footer */}
-            {/* <footer className="border-t border-gray-800 mt-16 py-6 text-center text-white text-sm">
+            <footer className="border-t border-gray-800 mt-16 py-6 text-center text-white text-sm">
                 <div>
-                    Built with <span className="text-teal-400">Aiken</span> + <span className="text-teal-400">MeshJS</span> on Cardano Preview Testnet
+                    Built with <span className="text-teal-400">Aiken</span> + <span className="text-teal-400">MeshJS</span> on Cardano Preprod Testnet
                     with love &lt;3 from <span className="text-teal-400">Cardano2vn</span>
                 </div>
-            </footer> */}
+            </footer>
         </main>
     );
 }
