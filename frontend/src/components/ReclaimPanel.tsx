@@ -4,24 +4,30 @@ import { useState } from "react";
 import type { UTxO } from "@meshsdk/common";
 import type { BrowserWallet } from "@meshsdk/wallet";
 import type { CampaignDatum } from "../lib/contract";
+import { DECIMAL_PLACE } from "@/constants/common";
 
 interface Props {
     wallet: BrowserWallet;
-    walletPkh: string;
+    address: string;
     campaignUtxo: UTxO;
-    datum: CampaignDatum;
+    datum: {
+        beneficiary: string;
+        goal: number;
+        deadline: number;
+        contributions: { address: string; quantity: number }[];
+    };
     onSuccess: (txHash: string) => void;
 }
 
-export default function ReclaimPanel({ wallet, walletPkh, campaignUtxo, datum, onSuccess }: Props) {
+export default function ReclaimPanel({ wallet, address, campaignUtxo, datum, onSuccess }: Props) {
     const [loading, setLoading] = useState(false);
     const [txHash, setTxHash] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const total = datum.contributions.reduce((s, c) => s + c.amount, 0n);
+    const total = datum.contributions.reduce((s, c) => s + c.quantity, 0);
     const isExpired = Date.now() > datum.deadline;
     const goalMet = total >= datum.goal;
-    const myContrib = datum.contributions.find((c) => c.pkh === walletPkh);
+    const myContrib = datum.contributions.find((c) => c.address === address);
     const canReclaim = isExpired && !goalMet && !!myContrib;
 
     async function handleReclaim() {
@@ -60,7 +66,7 @@ export default function ReclaimPanel({ wallet, walletPkh, campaignUtxo, datum, o
                 <div className="flex justify-between">
                     <span className="text-gray-400">Your Contribution</span>
                     <span className={myContrib ? "text-teal-400" : "text-gray-500"}>
-                        {myContrib ? `${(Number(myContrib.amount) / 1e6).toFixed(2)} ADA` : "None"}
+                        {myContrib ? `${(Number(myContrib.quantity) / DECIMAL_PLACE).toFixed(2)} ADA` : "None"}
                     </span>
                 </div>
             </div>
@@ -90,7 +96,7 @@ export default function ReclaimPanel({ wallet, walletPkh, campaignUtxo, datum, o
                         ? "No Contribution Found"
                         : !isExpired
                           ? "Deadline Not Passed"
-                          : `Reclaim ${myContrib ? (Number(myContrib.amount) / 1e6).toFixed(2) : 0} ADA`}
+                          : `Reclaim ${myContrib ? (Number(myContrib.quantity) / DECIMAL_PLACE).toFixed(2) : 0} ADA`}
             </button>
 
             {txHash && (

@@ -3,26 +3,30 @@
 import { useState } from "react";
 import type { UTxO } from "@meshsdk/common";
 import type { BrowserWallet } from "@meshsdk/wallet";
-import type { CampaignDatum } from "../lib/contract";
 
 interface Props {
     wallet: BrowserWallet;
-    walletPkh: string;
+    address: string;
     campaignUtxo: UTxO;
-    datum: CampaignDatum;
+    datum: {
+        beneficiary: string;
+        goal: number;
+        deadline: number;
+        contributions: { address: string; quantity: number }[];
+    };
     onSuccess: (txHash: string) => void;
 }
 
-export default function WithdrawPanel({ wallet, walletPkh, campaignUtxo, datum, onSuccess }: Props) {
+export default function WithdrawPanel({ wallet, address, campaignUtxo, datum, onSuccess }: Props) {
     const [loading, setLoading] = useState(false);
     const [txHash, setTxHash] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const total = datum.contributions.reduce((s, c) => s + c.amount, 0n);
+    const total = datum.contributions.reduce((s, c) => s + c.quantity, 0);
     const isExpired = Date.now() > datum.deadline;
     const goalMet = total >= datum.goal;
-    const isBeneficiary = walletPkh === datum.beneficiary;
-    // Withdraw chỉ cần goal đạt, không cần deadline
+    const isBeneficiary = address === datum.beneficiary;
+
     const canWithdraw = goalMet && isBeneficiary;
 
     async function handleWithdraw() {

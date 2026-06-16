@@ -17,7 +17,12 @@ type Tab = "campaigns" | "create" | "donate" | "withdraw" | "reclaim";
 
 interface SelectedCampaign {
     utxo: UTxO;
-    datum: CampaignDatum;
+    datum: {
+        beneficiary: string;
+        goal: number;
+        deadline: number;
+        contributions: { address: string; quantity: number }[];
+    };
 }
 
 export default function Home() {
@@ -131,7 +136,7 @@ export default function Home() {
                                 </button>
                             </div>
                             <CampaignList
-                                userPkh={walletState.pkh}
+                                address={walletState.address}
                                 onSelectCampaign={handleSelectCampaign}
                                 selectedUtxoId={selected ? `${selected.utxo.input.txHash}#${selected.utxo.input.outputIndex}` : null}
                                 refreshTrigger={refreshTrigger}
@@ -165,13 +170,13 @@ export default function Home() {
                     )}
 
                     {/* WITHDRAW */}
-                    {activeTab === "withdraw" && walletState.wallet && walletState.pkh && selected && (
+                    {activeTab === "withdraw" && walletState.wallet && walletState.address && selected && (
                         <div>
                             <h3 className="text-lg font-semibold text-white mb-4">Withdraw Funds</h3>
                             <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-6">
                                 <WithdrawPanel
                                     wallet={walletState.wallet}
-                                    walletPkh={walletState.pkh}
+                                    address={walletState.address}
                                     campaignUtxo={selected.utxo}
                                     datum={selected.datum}
                                     onSuccess={handleTxSuccess}
@@ -181,13 +186,13 @@ export default function Home() {
                     )}
 
                     {/* RECLAIM */}
-                    {activeTab === "reclaim" && walletState.wallet && walletState.pkh && selected && (
+                    {activeTab === "reclaim" && walletState.wallet && walletState.address && selected && (
                         <div>
                             <h3 className="text-lg font-semibold text-white mb-4">Reclaim Contribution</h3>
                             <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-6">
                                 <ReclaimPanel
                                     wallet={walletState.wallet}
-                                    walletPkh={walletState.pkh}
+                                    address={walletState.address}
                                     campaignUtxo={selected.utxo}
                                     datum={selected.datum}
                                     onSuccess={handleTxSuccess}

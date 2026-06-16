@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { BrowserWallet } from "@meshsdk/wallet";
+import { DECIMAL_PLACE } from "@/constants/common";
 
 interface Props {
     wallet: BrowserWallet;
@@ -28,9 +29,9 @@ export default function CreateCampaign({ wallet, onSuccess }: Props) {
             const deadlinePosixMs = new Date(deadlineDate).getTime();
             const initialLovelace = BigInt(Math.floor(parseFloat(initialAda) * 1_000_000));
 
-            if (goalLovelace <= 0n) throw new Error("Goal must be > 0 ADA");
+            if (goalLovelace <= 0) throw new Error("Goal must be > 0 ADA");
             if (deadlinePosixMs <= Date.now()) throw new Error("Deadline must be in the future");
-            if (initialLovelace < 2_000_000n) throw new Error("Initial donation must be >= 2 ADA");
+            if (initialLovelace < 5 * DECIMAL_PLACE) throw new Error("Initial donation must be >= 2 ADA");
 
             const hash = await createCampaign(wallet, beneficiary, goalLovelace, deadlinePosixMs, initialLovelace);
             setTxHash(hash);

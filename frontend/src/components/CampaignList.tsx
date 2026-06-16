@@ -1,44 +1,58 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { UTxO } from "@meshsdk/core";
-import type { CampaignDatum } from "../lib/contract";
+import { useEffect, useState } from "react";
+import { getCampaign } from "@/actions/crowdfund.action";
 
 interface Campaign {
     utxo: UTxO;
-    datum: CampaignDatum;
+    datum: {
+        beneficiary: string;
+        goal: number;
+        deadline: number;
+        contributions: { address: string; quantity: number }[];
+    };
 }
 
 interface Props {
-    userPkh: string | null;
+    address: string | null;
     onSelectCampaign: (campaign: Campaign) => void;
     selectedUtxoId: string | null;
     refreshTrigger: number;
 }
 
-function progressPercent(datum: CampaignDatum): number {
-    const total = datum.contributions.reduce((s, c) => s + c.amount, 0n);
-    if (datum.goal === 0n) return 0;
-    return Math.min(100, Number((total * 100n) / datum.goal));
+function progressPercent(datum: {
+    beneficiary: string;
+    goal: number;
+    deadline: number;
+    contributions: { address: string; quantity: number }[];
+}): number {
+    const total = datum.contributions.reduce((s, c) => s + c.quantity, 0);
+    if (datum.goal === 0) return 0;
+    return Math.min(100, Number((total * 100) / datum.goal));
 }
 
-function formatADA(lovelace: bigint): string {
+function formatADA(lovelace: number): string {
     return (Number(lovelace) / 1_000_000).toFixed(2);
 }
 
-export default function CampaignList({ userPkh, onSelectCampaign, selectedUtxoId, refreshTrigger }: Props) {
+export default function CampaignList({ address, onSelectCampaign, selectedUtxoId, refreshTrigger }: Props) {
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        (async() => {
+            setLoading(true)
+            try {
+                setCampaigns(await getCampaign())
+            }catch(error) {
+                setError(String(error))
+            }
+            setLoading(false)
+        })
+
         setLoading(true);
-        import("../lib/crowdfund").then(({ fetchCampaigns }) =>
-            fetchCampaigns()
-                .then(setCampaigns)
-                .catch((e) => setError(e.message))
-                .finally(() => setLoading(false)),
-        );
     }, [refreshTrigger]);
 
     if (loading) {
@@ -66,11 +80,11 @@ export default function CampaignList({ userPkh, onSelectCampaign, selectedUtxoId
         <div className="grid gap-4">
             {campaigns.map(({ utxo, datum }) => {
                 const utxoId = `${utxo.input.txHash}#${utxo.input.outputIndex}`;
-                const total = datum.contributions.reduce((s, c) => s + c.amount, 0n);
+                const total = datum.contributions.reduce((s, c) => s + c.quantity, 0);
                 const progress = progressPercent(datum);
                 const isExpired = Date.now() > datum.deadline;
                 const goalMet = total >= datum.goal;
-                const myContrib = userPkh ? datum.contributions.find((c) => c.pkh === userPkh) : null;
+                const myContrib = address ? datum.contributions.find((c) => c.address === address) : null;
                 const isSelected = utxoId === selectedUtxoId;
 
                 return (
@@ -118,7 +132,7 @@ export default function CampaignList({ userPkh, onSelectCampaign, selectedUtxoId
                         <p className="text-xs text-gray-500">Deadline: {new Date(datum.deadline).toLocaleString()}</p>
 
                         {/* My contribution */}
-                        {myContrib && <p className="mt-2 text-xs text-teal-400">My contribution: {formatADA(myContrib.amount)} ADA</p>}
+                        {myContrib && <p className="mt-2 text-xs text-teal-400">My contribution: {formatADA(myContrib.quantity)} ADA</p>}
 
                         {/* Contributors count */}
                         <p className="text-xs text-gray-600 mt-1">
