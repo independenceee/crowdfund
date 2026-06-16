@@ -3,8 +3,8 @@
 import { useState } from "react";
 import type { UTxO } from "@meshsdk/common";
 import type { BrowserWallet } from "@meshsdk/wallet";
-import type { CampaignDatum } from "../lib/contract";
 import { DECIMAL_PLACE } from "@/constants/common";
+import { reclaim } from "@/actions/crowdfund.action";
 
 interface Props {
     wallet: BrowserWallet;
@@ -35,10 +35,17 @@ export default function ReclaimPanel({ wallet, address, campaignUtxo, datum, onS
         setError(null);
         setTxHash(null);
         try {
-            const { reclaim } = await import("../lib/crowdfund");
-            const hash = await reclaim(wallet, campaignUtxo);
-            setTxHash(hash);
-            onSuccess(hash);
+            const unsignedTx: string = await reclaim({
+                address: await wallet.getChangeAddress(),
+                goal: datum.goal,
+                deadline: datum.deadline,
+                beneficiary: datum.beneficiary,
+            });
+            const signedTx = await wallet.signTx(unsignedTx);
+            const txHash = await wallet.submitTx(signedTx);
+
+            setTxHash(txHash);
+            onSuccess(txHash);
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err));
         } finally {

@@ -74,26 +74,6 @@ export function parseCampaignDatum(cborHex: string): CampaignDatum {
 }
 
 // ============================================================
-// FETCH CAMPAIGNS
-// ============================================================
-
-export async function fetchCampaigns(): Promise<{ utxo: UTxO; datum: CampaignDatum }[]> {
-    const provider = getProvider();
-    const utxos = await provider.fetchAddressUTxOs(getScriptAddress());
-    const results: { utxo: UTxO; datum: CampaignDatum }[] = [];
-    for (const utxo of utxos) {
-        if (!utxo.output.plutusData) continue;
-        try {
-            const datum = parseCampaignDatum(utxo.output.plutusData);
-            results.push({ utxo, datum });
-        } catch {
-            // Skip UTxOs with invalid/missing datum
-        }
-    }
-    return results;
-}
-
-// ============================================================
 // 1. CREATE CAMPAIGN
 // ============================================================
 

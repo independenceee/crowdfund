@@ -42,15 +42,15 @@ export default function CampaignList({ address, onSelectCampaign, selectedUtxoId
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        (async() => {
-            setLoading(true)
+        (async () => {
+            setLoading(true);
             try {
-                setCampaigns(await getCampaign())
-            }catch(error) {
-                setError(String(error))
+                setCampaigns(await getCampaign());
+            } catch (error) {
+                setError(String(error));
             }
-            setLoading(false)
-        })
+            setLoading(false);
+        })();
 
         setLoading(true);
     }, [refreshTrigger]);
@@ -95,7 +95,6 @@ export default function CampaignList({ address, onSelectCampaign, selectedUtxoId
                             isSelected ? "border-teal-400 bg-teal-900/20" : "border-gray-700 bg-gray-900/50 hover:border-gray-500"
                         }`}
                     >
-                        {/* Status badge */}
                         <div className="absolute top-4 right-4">
                             {goalMet ? (
                                 <span className="px-2 py-0.5 text-xs rounded-full bg-green-900/50 text-green-400 border border-green-600/40">
@@ -110,10 +109,8 @@ export default function CampaignList({ address, onSelectCampaign, selectedUtxoId
                             )}
                         </div>
 
-                        {/* Beneficiary */}
                         <p className="text-xs text-gray-500 mb-1 font-mono">Beneficiary: {datum.beneficiary.slice(0, 20)}...</p>
 
-                        {/* Progress bar */}
                         <div className="mt-3 mb-2">
                             <div className="flex justify-between text-sm mb-1">
                                 <span className="text-white font-semibold">{formatADA(total)} ADA</span>

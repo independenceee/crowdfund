@@ -204,12 +204,12 @@ export default function Home() {
             </div>
 
             {/* Footer */}
-            <footer className="border-t border-gray-800 mt-16 py-6 text-center text-white text-sm">
-                <p>
+            {/* <footer className="border-t border-gray-800 mt-16 py-6 text-center text-white text-sm">
+                <div>
                     Built with <span className="text-teal-400">Aiken</span> + <span className="text-teal-400">MeshJS</span> on Cardano Preview Testnet
                     with love &lt;3 from <span className="text-teal-400">Cardano2vn</span>
-                </p>
-            </footer>
+                </div>
+            </footer> */}
         </main>
     );
 }

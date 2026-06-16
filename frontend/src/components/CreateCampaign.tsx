@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { BrowserWallet } from "@meshsdk/wallet";
 import { DECIMAL_PLACE } from "@/constants/common";
+import { create } from "@/actions/crowdfund.action";
 
 interface Props {
     wallet: BrowserWallet;
@@ -24,18 +25,26 @@ export default function CreateCampaign({ wallet, onSuccess }: Props) {
         setError(null);
         setTxHash(null);
         try {
-            const { createCampaign } = await import("../lib/crowdfund");
             const goalLovelace = BigInt(Math.floor(parseFloat(goalAda) * 1_000_000));
             const deadlinePosixMs = new Date(deadlineDate).getTime();
             const initialLovelace = BigInt(Math.floor(parseFloat(initialAda) * 1_000_000));
 
             if (goalLovelace <= 0) throw new Error("Goal must be > 0 ADA");
             if (deadlinePosixMs <= Date.now()) throw new Error("Deadline must be in the future");
-            if (initialLovelace < 5 * DECIMAL_PLACE) throw new Error("Initial donation must be >= 2 ADA");
+            if (initialLovelace < 2 * DECIMAL_PLACE) throw new Error("Initial donation must be >= 2 ADA");
 
-            const hash = await createCampaign(wallet, beneficiary, goalLovelace, deadlinePosixMs, initialLovelace);
-            setTxHash(hash);
-            onSuccess(hash);
+            const unsignedTx = await create({
+                address: await wallet.getChangeAddress(),
+                beneficiary,
+                goal: Number(goalAda) * DECIMAL_PLACE,
+                deadline: deadlinePosixMs,
+                initial: Number(initialAda) * DECIMAL_PLACE,
+            });
+            const signedTx = await wallet.signTx(unsignedTx);
+            const txHash = await wallet.submitTx(signedTx);
+
+            setTxHash(txHash);
+            onSuccess(txHash);
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err));
         } finally {
