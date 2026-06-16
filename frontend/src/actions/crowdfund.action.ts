@@ -76,6 +76,44 @@ export const create = async ({
     });
 };
 
+export const donate = async ({
+    beneficiary,
+    goal,
+    deadline,
+    address,
+    quantity
+}: {
+    beneficiary: string;
+    goal: number;
+    deadline: number;
+    address: string;
+    quantity: number
+}) => {
+    const meshWallet = new MeshWallet({
+        accountIndex: 0,
+        networkId: APP_NETWORK_ID,
+        fetcher: blockfrostProvider,
+        submitter: blockfrostProvider,
+        key: {
+            type: "address",
+            address: address,
+        },
+    });
+
+    const meshTxBuilder: MeshTxBuilder = new MeshTxBuilder({
+        meshWallet: meshWallet,
+    });
+
+    await meshTxBuilder.initalize();
+
+    return await meshTxBuilder.donate({
+        beneficiary: beneficiary,
+        deadline: deadline,
+        goal: goal,
+        quantity: quantity
+    });
+};
+
 export const reclaim = async ({
     beneficiary,
     goal,

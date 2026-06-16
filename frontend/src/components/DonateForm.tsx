@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { UTxO } from "@meshsdk/common";
-import type { BrowserWallet } from "@meshsdk/wallet";
-import type { CampaignDatum } from "../lib/contract";
+import type { UTxO, BrowserWallet } from "@meshsdk/core";
 import { DECIMAL_PLACE } from "@/constants/common";
+import { donate } from "@/actions/crowdfund.action";
 
 interface Props {
     wallet: BrowserWallet;
@@ -36,10 +35,16 @@ export default function DonateForm({ wallet, campaignUtxo, datum, onSuccess }: P
         try {
             if (isExpired) throw new Error("Campaign đã kết thúc.");
             if (goalMet) throw new Error("Goal đã đạt rồi.");
-            const { donate } = await import("../lib/crowdfund");
-            const donationLovelace = BigInt(Math.floor(parseFloat(amountAda) * 1_000_000));
+
+            const donationLovelace = Number(Math.floor(parseFloat(amountAda) * DECIMAL_PLACE));
             if (donationLovelace < DECIMAL_PLACE) throw new Error("Minimum donation: 1 ADA");
-            const hash = await donate(wallet, campaignUtxo, donationLovelace);
+            const hash = await donate({
+                address: await wallet.getChangeAddress(),
+                deadline: datum.deadline,
+                goal: datum.goal,
+                beneficiary: datum.beneficiary,
+                quantity: Number(amountAda) * DECIMAL_PLACE,
+            });
             setTxHash(hash);
             onSuccess(hash);
         } catch (err) {
